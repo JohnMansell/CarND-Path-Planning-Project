@@ -7,6 +7,7 @@
 #include "helper_functions.h"
 #include <math.h>
 #include <algorithm>
+#include "json.hpp"
 
 #define LEFT -1
 #define RIGHT 1
@@ -48,31 +49,51 @@ int fastest_lane()
 			lane_1_clearance = std::numeric_limits<double>::max();
 			lane_2_clearance = std::numeric_limits<double>::max();
 
+			lane_0_speed = 50;
+			lane_1_speed = 50;
+			lane_2_speed = 50;
+
 		// Lane Speeds
 			for (auto other_car : other_cars)
 			{
+
+				double clearance = (other_car.s - this->s);
+
+				if ((-10 <= clearance) && (30 >= clearance))
+				{
+					cout << "\n\nEgo s = " << this->s << endl;
+					cout << "Oth s = " << other_car.s << endl;
+					cout << "D     = " << other_car.d << endl;
+					cout << "Lane  = " << other_car.lane << endl;
+					cout << "Clear = " << clearance << endl;
+				}
+
+
+				if (other_car.s >= (this->s))
+				{
+
 					switch (other_car.lane)
 					{
 						case 0:
-							if ((other_car.s < lane_0_clearance) && (other_car.s >= this->s))
+							if (clearance < lane_0_clearance)
 							{
-								lane_0_clearance = (other_car.s - this->s);
+								lane_0_clearance = clearance;
 								lane_0_speed = other_car.speed;
 							}
 							break;
 
 						case 1:
-							if ((other_car.s < lane_1_clearance) && (other_car.s >= this->s))
+							if (clearance < lane_1_clearance)
 							{
-								lane_1_clearance = (other_car.s - this->s);
+								lane_1_clearance = clearance;
 								lane_1_speed = other_car.speed;
 							}
 							break;
 
 						case 2:
-							if ((other_car.s < lane_2_clearance) && (other_car.s >= this->s))
+							if (clearance < lane_2_clearance)
 							{
-								lane_2_clearance = (other_car.s - this->s);
+								lane_2_clearance = clearance;
 								lane_2_speed = other_car.speed;
 							}
 							break;
@@ -81,6 +102,9 @@ int fastest_lane()
 							cout << "\n\n -- Error -- \n\n   other_car.lane = " << other_car.lane << endl;
 							break;
 					}
+
+				}
+
 			}
 
 	}
@@ -93,12 +117,6 @@ int fastest_lane()
 //--------------------------
 	double Vehicle::change_lane_cost(const vector<Vehicle> &other_cars, int direction)
 	{
-
-		double cost = 0;
-		double lane_speeds[] = {lane_0_speed, lane_1_speed, lane_2_speed};
-		double lane_clearance[] = {lane_0_clearance, lane_1_clearance, lane_2_clearance};
-
-
 		// Stay on the Road
 			if ( (lane == 0) && (direction == LEFT))  { return 999.9;}
 			if ( (lane == 2) && (direction == RIGHT)) { return 999.9;}
@@ -106,13 +124,18 @@ int fastest_lane()
 		// Is it secret? Is it safe?
 			for (auto other_car : other_cars)
 			{
-				if ( (other_car.lane == lane + direction) && (other_car.s >= s - 0.5 ) && (other_car.s <= s + 0.5))
+				if ( (other_car.lane == lane + direction) && (other_car.s >= s - 1.5 ) && (other_car.s <= s + safety_buffer))
 					return 999;
 			}
 
-		// Cost -- Lane speeds
-			cost += (target_speed - lane_speeds[lane + direction]) / target_speed;
-			cost -= (1 / lane_clearance[lane + direction]);
+		// Cost -- Parameters
+			double cost = 0;
+			double lane_speeds[] = {lane_0_speed, lane_1_speed, lane_2_speed};
+			double lane_clearance[] = {lane_0_clearance, lane_1_clearance, lane_2_clearance};
+
+		// Cost -- Lane Speed
+			cost += (50 - lane_speeds[lane + direction]) / 50;
+			cost += (1 / lane_clearance[lane + direction]);
 
 
 		return cost;
@@ -165,6 +188,7 @@ int fastest_lane()
 				lane -= 1;
 				this->target_speed = lane_speeds[lane - 1];
 				this->current_state = change_left;
+				adjust_speed();
 				cout << " Change Left " << lane << endl;
 			}
 
@@ -173,6 +197,7 @@ int fastest_lane()
 				lane += 1;
 				this->target_speed = lane_speeds[lane + 1];
 				this->current_state = change_right;
+				adjust_speed();
 				cout << "Change Right " << lane << endl;
 			}
 
@@ -203,10 +228,16 @@ int fastest_lane()
 	{
 		// Finish Change before planning another change
 			if (current_state != keep_lane)
-				return;
+			{
+				// Lane Change complete ?
+					if ((this->d >= 4 * lane + 2 ) || (this->d <= 4 * lane - 2))
+						return;
+
+					else {current_state = keep_lane;}
+			}
 
 		// Keep Lane
-			if (front_distance > 2 * following_distance)
+			if (front_distance > 3 * following_distance)
 				stay_in_lane();
 
 		// Calculate Costs
@@ -241,3 +272,81 @@ int fastest_lane()
 
 		adjust_speed();
 	}
+
+
+//---------------------------------
+//      Populate Data from JSON
+//---------------------------------
+	void Vehicle::populate_data_from_json(const nlohmann::json &j)
+	{
+		this->x = j[1]["x"];
+		this->y = j[1]["y"];
+		this->s = j[1]["s"];
+		this->d = j[1]["d"];
+		this->yaw = j[1]["yaw"];
+//
+		this->s += 0.02 * (double)j[1]["speed"];
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

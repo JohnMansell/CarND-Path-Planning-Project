@@ -12,14 +12,15 @@
 	#include <map>
 	#include <string>
 	#include <math.h>
+	#include "json.hpp"
 
 	using namespace std;
 
 //-------------------------
 //      Parameters
 //-------------------------
-	const double safety_buffer = 2;
-	const double following_distance = 6;
+	const double safety_buffer = 5;
+	const double following_distance = 10;
 	const double max_accl = 0.3;
 
 //==========================
@@ -56,6 +57,8 @@
 		State current_state;
 		State next_state;
 
+
+
 		vector<State> available_states;
 		vector<double> s_traj_coeffs, d_traj_coeffs;
 
@@ -88,6 +91,8 @@
 			double change_lane_cost(const vector<Vehicle> &other_cars, int direction);
 
 			void find_lane_speeds(const vector<Vehicle> &other_cars);
+
+			void populate_data_from_json(const nlohmann::json &j);
 	};
 
 //-------------------------

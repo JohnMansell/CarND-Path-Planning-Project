@@ -107,20 +107,8 @@ if (s != "")
     if (event == "telemetry") {
 	    // j[1] is the data JSON object
 
-	    // Main car's localization Data
-		    double car_x = j[1]["x"];
-		    double car_y = j[1]["y"];
-		    double car_s = j[1]["s"];
-		    double car_d = j[1]["d"];
-		    double car_yaw = j[1]["yaw"];
-		    double car_speed = j[1]["speed"];
-
-		    ego.x = car_x;
-		    ego.y = car_y;
-		    ego.s = car_s;
-		    ego.d = car_d;
-		    ego.yaw = car_yaw;
-//		    ego.speed = car_speed;
+	    // Localization -- Ego
+	        ego.populate_data_from_json(j);
 
 	    // Previous path data given to the Planner
 		    auto previous_path_x = j[1]["previous_path_x"];
@@ -136,10 +124,10 @@ if (s != "")
 	    // Previous Size
 	        int prev_size = previous_path_x.size();
 
-		    if (prev_size > 0) {
-			    ego.s = end_path_s;
-			    ego.d = end_path_d;
-		    }
+//		    if (prev_size > 0) {
+//			    ego.s = end_path_s;
+//			    ego.d = end_path_d;
+//		    }
 
 	    // Flags
 		    bool too_close = false;
@@ -193,6 +181,9 @@ if (s != "")
 				    double vy = car[4];
 				    car_vehicle.speed = get_velocity(vx, vy);
 
+			    // Adjust Position
+			        car_vehicle.s += car_vehicle.speed * 0.02;
+
 				other_cars.push_back(car_vehicle);
 		    }
 
@@ -205,7 +196,7 @@ if (s != "")
 			    if (other_car.lane == ego.lane)
 			    {
 				    // Car is in front of ego
-				    if ( (other_car.s >= ego.s) && (other_car.s - ego.s) < 30)
+				    if ( (other_car.s >= (ego.s - 0.5)) && (other_car.s - ego.s) < 30)
 				    {
 					    double front_distance = other_car.s - ego.s;
 					    front_distance += 0.02 * other_car.speed;
@@ -232,22 +223,22 @@ if (s != "")
         vector<double> ptsy;
 
         // Reference x, y, yaw states
-            double ref_x = car_x;
-            double ref_y = car_y;
-            double ref_yaw = deg2rad(car_yaw);
+            double ref_x = ego.x;
+            double ref_y = ego.y;
+            double ref_yaw = deg2rad(ego.yaw);
 
         // If previous size is almost empty, use car as starting reference
             if(prev_size < 2)
             {
                 // Use two points that make the path tangent to the car
-                double prev_car_x = car_x - cos(car_yaw);
-                double prev_car_y = car_y - sin(car_yaw);
+                double prev_car_x = ego.x - cos(ego.yaw);
+                double prev_car_y = ego.y - sin(ego.yaw);
 
                 ptsx.push_back(prev_car_x);
-                ptsx.push_back(car_x);
+                ptsx.push_back(ego.x);
 
                 ptsy.push_back(prev_car_y);
-                ptsy.push_back(car_y);
+                ptsy.push_back(ego.y);
             }
 
         // Use the previous path's end point as a starting reference
@@ -270,9 +261,9 @@ if (s != "")
             }
 
         // In Frenet add evenly 30m spaced ponits ahead of the starting reference
-            vector<double> next_wp0 = getXY(car_s + 30, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            vector<double> next_wp1 = getXY(car_s + 60, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            vector<double> next_wp2 = getXY(car_s + 90, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            vector<double> next_wp0 = getXY(ego.s + 30, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            vector<double> next_wp1 = getXY(ego.s + 60, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            vector<double> next_wp2 = getXY(ego.s + 90, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
             ptsx.push_back(next_wp0[0]);
 	        ptsx.push_back(next_wp1[0]);
@@ -311,7 +302,7 @@ if (s != "")
 	        }
 
         // Calculate how to break up spline ponits so that we travel at our desired reference velocity
-            double target_x = 30.0;
+            double target_x = 60.0;
 	        double target_y = s(target_x);
 	        double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
 

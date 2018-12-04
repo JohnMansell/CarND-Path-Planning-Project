@@ -124,10 +124,13 @@ if (s != "")
 	    // Previous Size
 	        int prev_size = previous_path_x.size();
 
-//		    if (prev_size > 0) {
-//			    ego.s = end_path_s;
-//			    ego.d = end_path_d;
-//		    }
+	        double car_s = ego.s;
+	        double car_d = ego.d;
+
+		    if (prev_size > 0) {
+		    	car_s = end_path_s;
+		    	car_d = end_path_d;
+		    }
 
 	    // Flags
 		    bool too_close = false;
@@ -217,10 +220,16 @@ if (s != "")
 		    ref_velocity = ego.speed;
 		    lane = ego.lane;
 
+
         json msgJson;
 
-        vector<double> ptsx;
-        vector<double> ptsy;
+        // Way Point Vectors
+	        vector<double> ptsx;
+	        vector<double> ptsy;
+
+        // Futre Point Vectors
+		    vector<double> next_x_vals;
+		    vector<double> next_y_vals;
 
         // Reference x, y, yaw states
             double ref_x = ego.x;
@@ -260,39 +269,19 @@ if (s != "")
                     ptsy.push_back(ref_y);
             }
 
-        // In Frenet add evenly 30m spaced ponits ahead of the starting reference
-            vector<double> next_wp0 = getXY(ego.s + 30, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            vector<double> next_wp1 = getXY(ego.s + 60, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            vector<double> next_wp2 = getXY(ego.s + 90, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+		// Set Way Points
+			vector<double> next_wp0;
+            vector<double> next_wp1;
+            vector<double> next_wp2;
 
-            ptsx.push_back(next_wp0[0]);
-	        ptsx.push_back(next_wp1[0]);
-	        ptsx.push_back(next_wp2[0]);
+			set_waypoints(map_waypoints_s, map_waypoints_x, map_waypoints_y, next_wp0, next_wp1, next_wp2, ptsx, ptsy, car_s, lane, ref_x, ref_y, ref_yaw);
 
-	        ptsy.push_back(next_wp0[1]);
-	        ptsy.push_back(next_wp1[1]);
-	        ptsy.push_back(next_wp2[1]);
 
-        // Transformation to car's reference
-            for (int i = 0; i < ptsx.size(); i++)
-            {
-                // Angle to zero
-                    double shift_x = ptsx[i] - ref_x;
-                    double shift_y = ptsy[i] - ref_y;
+	    // Spline
+	        tk::spline s;
+		    s.set_boundary(tk::spline::second_deriv, 0.0, tk::spline::second_deriv, 0.0, true);
+		    s.set_points(ptsx, ptsy);
 
-                    ptsx[i] = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
-                    ptsy[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
-            }
-
-        // Create a spline
-            tk::spline s;
-
-        // Set (x, y) points to the spline
-            s.set_points(ptsx, ptsy);
-
-        // Define the actual (x, y) points we will use for the planner
-            vector<double> next_x_vals;
-            vector<double> next_y_vals;
 
         // Start with all the previous path points from last time
 	        for (int i=0; i < previous_path_x.size(); i++)
@@ -302,7 +291,7 @@ if (s != "")
 	        }
 
         // Calculate how to break up spline ponits so that we travel at our desired reference velocity
-            double target_x = 60.0;
+            double target_x = 10.0;
 	        double target_y = s(target_x);
 	        double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
 
@@ -310,7 +299,7 @@ if (s != "")
 
         // Fill up the rest of the path planner after filling it with previous points.
         // Here we will always output 50 points
-            for (int i=0; i <= 50 - previous_path_x.size(); i++)
+            for (int i=0; i <= 70 - previous_path_x.size(); i++)
             {
                 double N = (target_dist / (0.02 * ref_velocity / 2.24) );
                 double x_point = x_add_on + (target_x) / N;
@@ -332,7 +321,6 @@ if (s != "")
                     next_y_vals.push_back(y_point);
 
             }
-
 
     // Send Trajectory to car
         msgJson["next_x"] = next_x_vals;

@@ -157,20 +157,14 @@ if (s != "")
 			        int car_lane;
 
 			        if ( (d > lane_line_0) && (d < lane_line_1))
-			        {
 			        	car_lane = 0;
-			        }
 
 
 			        if ( (d > lane_line_1) && (d < lane_line_2))
-			        {
 			        	car_lane = 1;
-			        }
 
 		            if ( (d > lane_line_2) && (d < lane_line_3))
-		            {
 		            	car_lane = 2;
-		            }
 
 	            // Construct new Vehicle
 				    Vehicle car_vehicle = Vehicle(car_lane);
@@ -215,112 +209,76 @@ if (s != "")
 
 		    }
 
-		// Plan Next State
-			ego.plan_next_state(other_cars);
-		    ref_velocity = ego.speed;
-		    lane = ego.lane;
+	// Plan Next State
+		ego.plan_next_state(other_cars);
+	    ref_velocity = ego.speed;
+	    lane = ego.lane;
 
 
-        json msgJson;
+    json msgJson;
 
-        // Way Point Vectors
-	        vector<double> ptsx;
-	        vector<double> ptsy;
+    // Way Point Vectors
+        vector<double> ptsx;
+        vector<double> ptsy;
 
-        // Futre Point Vectors
-		    vector<double> next_x_vals;
-		    vector<double> next_y_vals;
+    // Futre Point Vectors
+	    vector<double> next_x_vals;
+	    vector<double> next_y_vals;
 
-        // Reference x, y, yaw states
-            double ref_x = ego.x;
-            double ref_y = ego.y;
-            double ref_yaw = deg2rad(ego.yaw);
+    // Reference x, y, yaw states
+        double ref_x = ego.x;
+        double ref_y = ego.y;
+        double ref_yaw = deg2rad(ego.yaw);
 
-        // If previous size is almost empty, use car as starting reference
-            if(prev_size < 2)
-            {
-                // Use two points that make the path tangent to the car
-                double prev_car_x = ego.x - cos(ego.yaw);
-                double prev_car_y = ego.y - sin(ego.yaw);
+    // If previous size is almost empty, use car as starting reference
+        if(prev_size < 2)
+        {
+            // Use two points that make the path tangent to the car
+            double prev_car_x = ego.x - cos(ego.yaw);
+            double prev_car_y = ego.y - sin(ego.yaw);
 
-                ptsx.push_back(prev_car_x);
-                ptsx.push_back(ego.x);
+            ptsx.push_back(prev_car_x);
+            ptsx.push_back(ego.x);
 
-                ptsy.push_back(prev_car_y);
-                ptsy.push_back(ego.y);
-            }
+            ptsy.push_back(prev_car_y);
+            ptsy.push_back(ego.y);
+        }
 
-        // Use the previous path's end point as a starting reference
-            else
-            {
-                // Redefine reference state as previous path end point
-                    ref_x = previous_path_x[prev_size - 1];
-                    ref_y = previous_path_y[prev_size - 1];
+    // Use the previous path's end point as a starting reference
+        else
+        {
+            // Redefine reference state as previous path end point
+                ref_x = previous_path_x[prev_size - 1];
+                ref_y = previous_path_y[prev_size - 1];
 
-                    double ref_x_prev = previous_path_x[prev_size - 2];
-                    double ref_y_prev = previous_path_y[prev_size - 2];
-                    ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+                double ref_x_prev = previous_path_x[prev_size - 2];
+                double ref_y_prev = previous_path_y[prev_size - 2];
+                ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
-                    // Use two points that make the path tangent to the previous path's end point
-                    ptsx.push_back(ref_x_prev);
-                    ptsx.push_back(ref_x);
+                // Use two points that make the path tangent to the previous path's end point
+                ptsx.push_back(ref_x_prev);
+                ptsx.push_back(ref_x);
 
-                    ptsy.push_back(ref_y_prev);
-                    ptsy.push_back(ref_y);
-            }
+                ptsy.push_back(ref_y_prev);
+                ptsy.push_back(ref_y);
+        }
 
-		// Set Way Points
-			vector<double> next_wp0;
-            vector<double> next_wp1;
-            vector<double> next_wp2;
+	// Set Way Points
+		vector<double> next_wp0;
+        vector<double> next_wp1;
+        vector<double> next_wp2;
 
-			set_waypoints(map_waypoints_s, map_waypoints_x, map_waypoints_y, next_wp0, next_wp1, next_wp2, ptsx, ptsy, car_s, lane, ref_x, ref_y, ref_yaw);
-
-
-	    // Spline
-	        tk::spline s;
-		    s.set_boundary(tk::spline::second_deriv, 0.0, tk::spline::second_deriv, 0.0, true);
-		    s.set_points(ptsx, ptsy);
+		set_waypoints(map_waypoints_s, map_waypoints_x, map_waypoints_y, next_wp0, next_wp1, next_wp2, ptsx, ptsy, car_s, lane, ref_x, ref_y, ref_yaw);
 
 
-        // Start with all the previous path points from last time
-	        for (int i=0; i < previous_path_x.size(); i++)
-	        {
-		        next_x_vals.push_back(previous_path_x[i]);
-		        next_y_vals.push_back(previous_path_y[i]);
-	        }
+    // Spline
+        tk::spline spline;
+	    spline.set_boundary(tk::spline::second_deriv, 0.0, tk::spline::second_deriv, 0.0, true);
+	    spline.set_points(ptsx, ptsy);
 
-        // Calculate how to break up spline ponits so that we travel at our desired reference velocity
-            double target_x = 10.0;
-	        double target_y = s(target_x);
-	        double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
+    // Set Future Points
+        set_future_points(next_x_vals, next_y_vals, spline, previous_path_x, previous_path_y, ref_x, ref_y, ref_yaw, ref_velocity);
 
-	        double x_add_on = 0;
-
-        // Fill up the rest of the path planner after filling it with previous points.
-        // Here we will always output 50 points
-            for (int i=0; i <= 70 - previous_path_x.size(); i++)
-            {
-                double N = (target_dist / (0.02 * ref_velocity / 2.24) );
-                double x_point = x_add_on + (target_x) / N;
-                double y_point = s(x_point);
-
-                x_add_on = x_point;
-
-                double x_ref = x_point;
-                double y_ref = y_point;
-
-                // rotate back to normal after rotating it earlier
-                    x_point = ( x_ref * cos(ref_yaw) - ( y_ref * sin(ref_yaw)));
-                    y_point = ( x_ref * sin(ref_yaw) + ( y_ref * cos(ref_yaw)));
-
-                    x_point += ref_x;
-                    y_point += ref_y;
-
-                    next_x_vals.push_back(x_point);
-                    next_y_vals.push_back(y_point);
-
-            }
 
     // Send Trajectory to car
         msgJson["next_x"] = next_x_vals;
@@ -331,10 +289,10 @@ if (s != "")
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
     }
 
-} else {
-    // Manual driving
-        std::string msg = "42[\"manual\",{}]";
-        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+    // Manual Driving
+}       else {
+            std::string msg = "42[\"manual\",{}]";
+            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
   }
 }
 });

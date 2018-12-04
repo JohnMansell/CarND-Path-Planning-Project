@@ -221,11 +221,26 @@ int fastest_lane()
 			cout << "\n" << endl;
 			int speed_adjust = 4;
 
-			if (* best_cost == keep_lane_cost)
+
+
+			if (* best_cost == change_left_2_cost)
 			{
-				this->current_state = keep_lane;
-				cout << "Stay in Lane " << lane << endl;
-				stay_in_lane();
+				lane -= 2;
+				this->target_speed = lane_speeds[lane - 2] - speed_adjust;
+				this->current_state = change_left;
+				adjust_speed();
+				cout << " Change 2x Left " << lane << endl;
+			}
+
+
+
+			else if (* best_cost == change_right_2_cost)
+			{
+				lane += 2;
+				this->target_speed = lane_speeds[lane + 2] - speed_adjust;
+				this->current_state = change_right;
+				adjust_speed();
+				cout << " Change 2x Right " << lane << endl;
 			}
 
 			else if (* best_cost == change_left_cost)
@@ -237,14 +252,7 @@ int fastest_lane()
 				cout << " Change Left " << lane << endl;
 			}
 
-			else if (* best_cost == change_left_2_cost)
-			{
-				lane -= 2;
-				this->target_speed = lane_speeds[lane - 2] - speed_adjust;
-				this->current_state = change_left;
-				adjust_speed();
-				cout << " Change 2x Left " << lane << endl;
-			}
+
 
 			else if (* best_cost == change_right_cost)
 			{
@@ -255,16 +263,15 @@ int fastest_lane()
 				cout << " Change Right " << lane << endl;
 			}
 
-			else if (* best_cost == change_right_2_cost)
+			else if (* best_cost == keep_lane_cost)
 			{
-				lane += 2;
-				this->target_speed = lane_speeds[lane + 2] - speed_adjust;
-				this->current_state = change_right;
-				adjust_speed();
-				cout << " Change 2x Right " << lane << endl;
+				this->current_state = keep_lane;
+				cout << "Stay in Lane " << lane << endl;
+				stay_in_lane();
 			}
 
-			cout << " Best Cost = " << best_cost << " = " << *best_cost << endl;
+
+
 			cout << "Cost  = " << costs[0] << " -- " << costs[1] << " -- " << costs[2] << " -- " << costs[3] << " -- " << costs[4] << endl;
 			cout << "Speed = " << lane_speeds[0] << " || " << lane_speeds[1] << " || " << lane_speeds[2] << " --- " <<  lane_speeds[lane] << endl;
 			cout << "Clear = " << lane_0_clearance << " -- " << lane_1_clearance << " -- " << lane_2_clearance << endl;
@@ -352,25 +359,6 @@ int fastest_lane()
 		this->yaw = j[1]["yaw"];
 //
 		this->s += 0.02 * (double)j[1]["speed"];
-	}
-
-//---------------------------------
-//      Generate Path
-//---------------------------------
-
-	void Vehicle::generate_path(
-			vector<double> & ptsx,
-			vector<double> & ptsy,
-			vector<double> & next_x_vals,
-			vector<double> & next_y_vals,
-			vector<double> & previous_path_x,
-			vector<double> & previous_path_y,
-			vector<double> & map_waypoints_s,
-			vector<double> & map_waypoints_x,
-			vector<double> & map_waypoints_y)
-
-	{
-		return;
 	}
 
 

@@ -20,7 +20,7 @@
 //      Parameters
 //-------------------------
 	const double safety_buffer = 5;
-	const double following_distance = 10;
+	const double following_distance = 12;
 	const double max_accl = 0.3;
 
 //==========================
@@ -96,17 +96,6 @@
 			void populate_data_from_json(const nlohmann::json &j);
 
 			double change_2_lane_cost(const vector<Vehicle> &other_cars, int direction);
-
-			void generate_path(
-					vector<double> & ptsx,
-					vector<double> & ptsy,
-					vector<double> & next_x_vals,
-					vector<double> & next_y_vals,
-					vector<double> & prev_path_x,
-					vector<double> & prev_path_y,
-					vector<double> & map_waypoints_s,
-					vector<double> & map_waypoints_x,
-					vector<double> & map_waypoints_y);
 	};
 
 //-------------------------

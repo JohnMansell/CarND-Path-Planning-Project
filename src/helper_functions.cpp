@@ -215,7 +215,7 @@ void helper_test()
 			vector<double> & next_wp2,
 			vector<double> & ptsx,
 			vector<double> & ptsy,
-			const int car_s,
+			const double car_s,
 			const int lane,
 			double ref_x,
 			double ref_y,
@@ -223,7 +223,6 @@ void helper_test()
 
 	{
 		// Set Way Points
-
 			next_wp0 = getXY(car_s + 30, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 			next_wp1 = getXY(car_s + 60, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 			next_wp2 = getXY(car_s + 90, (2 + 4* lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
@@ -248,6 +247,59 @@ void helper_test()
 			}
 	}
 
+//----------------------------------
+//      Set Future Points (x , y)
+//----------------------------------
+	void set_future_points(
+			vector<double> & next_x_vals,
+			vector<double> & next_y_vals,
+			tk::spline s,
+			const vector<double> & previous_path_x,
+			const vector<double> & previous_path_y,
+			double ref_x,
+			double ref_y,
+			double ref_yaw,
+			double ref_velocity)
+	{
+		// Start with all the previous path points from last time
+		for (int i=0; i < previous_path_x.size(); i++)
+		{
+			next_x_vals.push_back(previous_path_x[i]);
+			next_y_vals.push_back(previous_path_y[i]);
+		}
+
+		// Calculate how to break up spline ponits so that we travel at our desired reference velocity
+		double target_x = 10.0;
+		double target_y = s(target_x);
+		double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
+
+		double x_add_on = 0;
+
+		// Fill up the rest of the path planner after filling it with previous points.
+		// Here we will always output 50 points
+		for (int i=0; i <= 50 - previous_path_x.size(); i++)
+		{
+			double N = (target_dist / (0.02 * ref_velocity / 2.24) );
+			double x_point = x_add_on + (target_x) / N;
+			double y_point = s(x_point);
+
+			x_add_on = x_point;
+
+			double x_ref = x_point;
+			double y_ref = y_point;
+
+			// rotate back to normal after rotating it earlier
+			x_point = ( x_ref * cos(ref_yaw) - ( y_ref * sin(ref_yaw)));
+			y_point = ( x_ref * sin(ref_yaw) + ( y_ref * cos(ref_yaw)));
+
+			x_point += ref_x;
+			y_point += ref_y;
+
+			next_x_vals.push_back(x_point);
+			next_y_vals.push_back(y_point);
+
+		}
+	}
 
 
 

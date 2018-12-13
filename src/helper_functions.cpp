@@ -13,6 +13,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+#include "Vehicle.h"
 
 using namespace std;
 
@@ -216,10 +217,10 @@ void helper_test()
 			vector<double> & ptsx,
 			vector<double> & ptsy,
 			const double car_s,
-			const int lane,
 			double ref_x,
 			double ref_y,
-			double ref_yaw)
+			double ref_yaw,
+			const int lane)
 
 	{
 		// Set Way Points
@@ -259,7 +260,8 @@ void helper_test()
 			double ref_x,
 			double ref_y,
 			double ref_yaw,
-			double ref_velocity)
+			double ref_velocity,
+			double target_x)
 	{
 		// Start with all the previous path points from last time
 		for (int i=0; i < previous_path_x.size(); i++)
@@ -269,35 +271,80 @@ void helper_test()
 		}
 
 		// Calculate how to break up spline ponits so that we travel at our desired reference velocity
-		double target_x = 10.0;
-		double target_y = s(target_x);
-		double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
+			double target_y = s(target_x);
+			double target_dist = sqrt( (target_x * target_x) + (target_y * target_y));
 
-		double x_add_on = 0;
+			double x_add_on = 0;
 
 		// Fill up the rest of the path planner after filling it with previous points.
 		// Here we will always output 50 points
-		for (int i=0; i <= 50 - previous_path_x.size(); i++)
+			for (int i=0; i <= 50 - previous_path_x.size(); i++)
+			{
+				double N = (target_dist / (0.02 * ref_velocity / 2.24) );
+				double x_point = x_add_on + (target_x) / N;
+				double y_point = s(x_point);
+
+				x_add_on = x_point;
+
+				double x_ref = x_point;
+				double y_ref = y_point;
+
+				// rotate back to normal after rotating it earlier
+				x_point = ( x_ref * cos(ref_yaw) - ( y_ref * sin(ref_yaw)));
+				y_point = ( x_ref * sin(ref_yaw) + ( y_ref * cos(ref_yaw)));
+
+				x_point += ref_x;
+				y_point += ref_y;
+
+				next_x_vals.push_back(x_point);
+				next_y_vals.push_back(y_point);
+
+			}
+	}
+
+//-------------------------------------
+//      Sensor Fusion -- Extract Cars
+//-------------------------------------
+	void extract_cars(const vector<vector<double>> & sensor_fusion, vector<Vehicle> & other_cars)
+	{
+		for (auto car: sensor_fusion)
 		{
-			double N = (target_dist / (0.02 * ref_velocity / 2.24) );
-			double x_point = x_add_on + (target_x) / N;
-			double y_point = s(x_point);
 
-			x_add_on = x_point;
+			// Lane Widths
+				const int lane_line_0 = 0;
+				const int lane_line_1 = 4*1;
+				const int lane_line_2 = 4*2;
+				const int lane_line_3 = 4*3;
 
-			double x_ref = x_point;
-			double y_ref = y_point;
+			// Lane
+				double d = car[6];
+				int car_lane;
 
-			// rotate back to normal after rotating it earlier
-			x_point = ( x_ref * cos(ref_yaw) - ( y_ref * sin(ref_yaw)));
-			y_point = ( x_ref * sin(ref_yaw) + ( y_ref * cos(ref_yaw)));
+				if ( (d > lane_line_0) && (d < lane_line_1))
+					car_lane = 0;
 
-			x_point += ref_x;
-			y_point += ref_y;
+				if ( (d > lane_line_1) && (d < lane_line_2))
+					car_lane = 1;
 
-			next_x_vals.push_back(x_point);
-			next_y_vals.push_back(y_point);
+				if ( (d > lane_line_2) && (d < lane_line_3))
+					car_lane = 2;
 
+			// Construct new Vehicle
+				Vehicle car_vehicle = Vehicle(car_lane);
+
+			// Position
+				car_vehicle.s = car[5];
+				car_vehicle.d = car[6];
+
+			// Velocity
+				double vx = car[3];
+				double vy = car[4];
+				car_vehicle.speed = get_velocity(vx, vy);
+
+			// Adjust Position
+				car_vehicle.s += car_vehicle.speed * 0.02;
+
+				other_cars.push_back(car_vehicle);
 		}
 	}
 

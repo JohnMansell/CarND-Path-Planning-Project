@@ -73,6 +73,7 @@ using namespace std;
 	// Parameters
 		int lane = 1;
 		double ref_velocity = 0.0; // mph
+		double target_distance = 10.0;
 		Vehicle ego = Vehicle(lane);
 		ego.current_state = Vehicle::keep_lane;
 
@@ -84,7 +85,7 @@ using namespace std;
 
 
 	// JSON Message
-		h.onMessage([&ego, &lane, &ref_velocity, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+		h.onMessage([&ego, &lane, &ref_velocity, &target_distance, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
 		                     uWS::OpCode opCode) {
 		    // "42" at the start of the message means there's a websocket message event.
 		    // The 4 signifies a websocket message
@@ -150,53 +151,18 @@ if (s != "")
 	    //-------------------------------------
 	    //      Get Cars from Sensor Fusion
 	    //-------------------------------------
-		    for (auto car: sensor_fusion)
-		    {
-		        // Lane
-			        float d = car[6];
-			        int car_lane;
-
-			        if ( (d > lane_line_0) && (d < lane_line_1))
-			        	car_lane = 0;
-
-
-			        if ( (d > lane_line_1) && (d < lane_line_2))
-			        	car_lane = 1;
-
-		            if ( (d > lane_line_2) && (d < lane_line_3))
-		            	car_lane = 2;
-
-	            // Construct new Vehicle
-				    Vehicle car_vehicle = Vehicle(car_lane);
-
-			    // Position
-			        car_vehicle.s = car[5];
-			        car_vehicle.d = car[6];
-
-                // Velocity
-				    double vx = car[3];
-				    double vy = car[4];
-				    car_vehicle.speed = get_velocity(vx, vy);
-
-			    // Adjust Position
-			        car_vehicle.s += car_vehicle.speed * 0.02;
-
-				other_cars.push_back(car_vehicle);
-		    }
-
+	        extract_cars(sensor_fusion, other_cars);
 
 		    for (auto other_car: other_cars)
 		    {
-
 
 			    // Handle Cars in my lane
 			    if (other_car.lane == ego.lane)
 			    {
 				    // Car is in front of ego
-				    if ( (other_car.s >= (ego.s - 0.5)) && (other_car.s - ego.s) < 30)
+				    if ( other_car.s >= (ego.s - 0.5) )
 				    {
 					    double front_distance = other_car.s - ego.s;
-					    front_distance += 0.02 * other_car.speed;
 
 					    if (front_distance < ego.front_distance)
 					    {
@@ -206,11 +172,11 @@ if (s != "")
 				    }
 			    }
 
-
 		    }
 
 	// Plan Next State
 		ego.plan_next_state(other_cars);
+	    target_distance = ego.target_distance;
 	    ref_velocity = ego.speed;
 	    lane = ego.lane;
 
@@ -255,7 +221,7 @@ if (s != "")
                 double ref_y_prev = previous_path_y[prev_size - 2];
                 ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
-                // Use two points that make the path tangent to the previous path's end point
+            // Use two points that make the path tangent to the previous path's end point
                 ptsx.push_back(ref_x_prev);
                 ptsx.push_back(ref_x);
 
@@ -268,7 +234,20 @@ if (s != "")
         vector<double> next_wp1;
         vector<double> next_wp2;
 
-		set_waypoints(map_waypoints_s, map_waypoints_x, map_waypoints_y, next_wp0, next_wp1, next_wp2, ptsx, ptsy, car_s, lane, ref_x, ref_y, ref_yaw);
+		set_waypoints(
+				map_waypoints_s,
+				map_waypoints_x,
+				map_waypoints_y,
+				next_wp0,
+				next_wp1,
+				next_wp2,
+				ptsx,
+				ptsy,
+				car_s,
+				ref_x,
+				ref_y,
+				ref_yaw,
+				lane);
 
 
     // Spline
@@ -277,7 +256,17 @@ if (s != "")
 	    spline.set_points(ptsx, ptsy);
 
     // Set Future Points
-        set_future_points(next_x_vals, next_y_vals, spline, previous_path_x, previous_path_y, ref_x, ref_y, ref_yaw, ref_velocity);
+        set_future_points(
+        		next_x_vals,
+        		next_y_vals,
+        		spline,
+        		previous_path_x,
+        		previous_path_y,
+        		ref_x,
+        		ref_y,
+        		ref_yaw,
+        		ref_velocity,
+        		target_distance);
 
 
     // Send Trajectory to car
@@ -289,11 +278,15 @@ if (s != "")
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
     }
 
-    // Manual Driving
-}       else {
-            std::string msg = "42[\"manual\",{}]";
-            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-  }
+}
+//--------------------------
+//      Manual Driving
+//--------------------------
+	else
+	{
+        std::string msg = "42[\"manual\",{}]";
+        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+    }
 }
 });
 

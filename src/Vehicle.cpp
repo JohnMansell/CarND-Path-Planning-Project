@@ -282,7 +282,7 @@ using namespace std;
 			}
 
 		// Keep Lane
-			else if (front_distance > 2.3 * following_distance)
+			else if (front_distance > 3 * following_distance)
 				stay_in_lane();
 
 
@@ -447,7 +447,7 @@ using namespace std;
 			{
 				double clearance = ( car.s - this->s );
 
-				if ((car.lane == this->lane + direction) && (clearance >= - 2 * safety_buffer ) && (clearance <= following_distance))
+				if ((car.lane == this->lane + direction) && (clearance >= - 2.5 * safety_buffer ) && (clearance <= following_distance))
 				{
 					target_lane_clear = false;
 				}
@@ -479,7 +479,10 @@ using namespace std;
 //-----------------------------
 	bool Vehicle::wait_to_pass()
 	{
-		if (* lane_clearances[this->target_lane] > *lane_clearances[this->lane])
+		if (* lane_clearances[this->target_lane] >= *lane_clearances[this->lane])
+			return false;
+
+		if (* lane_clearances[this->target_lane] >= front_distance)
 			return false;
 
 		// Time to Pass
@@ -558,8 +561,6 @@ using namespace std;
 	}
 
 
-// ToDo:: Double lane changes marked complete after 1 lane change
-// ToDo:: Check "lane change complete" step
 
 
 

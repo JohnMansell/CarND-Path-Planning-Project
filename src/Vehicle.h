@@ -19,12 +19,15 @@
 //-------------------------
 //      Parameters
 //-------------------------
-	const double safety_buffer = 3;
-	const double following_distance = 20;
+	const double safety_buffer = 3.3;
+	const double following_distance = 15;
 	const double max_accl = 0.28;
 	const int speed_adjust = 4;
 
 	bool lane_change_in_progress;
+
+	// ToDo : Put in dont_get_stuck counter
+	// ToDo : Extend path planning range -- was 2.3 * 15
 
 //==========================
 //      Vehicle
@@ -57,7 +60,7 @@
 			double target_distance = 10;
 
 
-		enum State { keep_lane, change_left, change_right, prep_2_left, prep_2_right, prep_left, prep_right, drop_back};
+		enum State { keep_lane, change_left, change_right, prep_2_left, prep_2_right, prep_left, prep_right};
 
 		State current_state;
 		State next_state;

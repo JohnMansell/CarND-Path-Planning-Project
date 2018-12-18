@@ -45,7 +45,7 @@ acceleration to my vehicle.
 > If the vehicle was currently in the middle of a lane change,  the finite state machine would wait until that lane change was complete.
 Otherwise, it would try to find the next best state and take the steps necessary to get there. The next best state was determined
 by minimizing a cost function. The cost function was designed to penalize lanes in which the cars in front of me were driving slowly.
-The goal of finding the next best state was to always be in the lane which would allow me to drive around the track most quickly.
+The goal of finding the next best state was to always be in the lane which would allow me to safely drive around the track most quickly.
 >
 >### Calculate Cost
 > The car was designed to move to the lane with the lowest cost. The cost of each lane was determined by whether or not I could drive

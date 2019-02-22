@@ -1,5 +1,5 @@
 # Path Planning
-> [![Path Planning](http://img.youtube.com/vi/hQwN9OZ39WY/0.jpg)](https://youtu.be/hQwN9OZ39WY "Path Planning")
+> [![Path Planning](WriteUp/PathPlanning.gif)](https://youtu.be/hQwN9OZ39WY "Path Planning")
 > [Full Video](https://youtu.be/hQwN9OZ39WY) on YouTube
 
 # Objective
@@ -24,7 +24,7 @@ the 50 MPH speed limit.
 # Video
 
 ### Included Files
-> [WriteUp.md](src/WriteUp.md) -- Full Write Up  
+> [WriteUp.md](WriteUp/WriteUp.md) -- Full Write Up
 > [Vehicle.cpp](src/Vehicle.cpp) -- Vehicle object, self and other cars on the road  
 > [helper_functions.cpp](src/helper_functions.cpp) -- General functions for processing data, mostly math and waypoint analysis.  
 > [main.cpp](src/main.cpp) -- Connects to the simuator. Process data and send commands back to the car through the simulator.  

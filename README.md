@@ -1,4 +1,8 @@
 # Path Planning
+> [![Path Planning](http://img.youtube.com/vi/hQwN9OZ39WY/0.jpg)](https://youtu.be/hQwN9OZ39WY "Path Planning")
+> [Full Video](https://youtu.be/hQwN9OZ39WY) on YouTube
+
+# Objective
 > The goal of this project is to build a path planner that creates
 smooth, safe trajectories for the car to follow. The highway track has
 other vehicles, all going different speeds, but approximately obeying
@@ -18,7 +22,6 @@ the 50 MPH speed limit.
 > C++
 
 # Video
-[![Path Planning](http://img.youtube.com/vi/hQwN9OZ39WY/0.jpg)](https://www.youtube.com/watch?v=hQwN9OZ39WY "Path Planning")
 
 ### Included Files
 > [WriteUp.md](src/WriteUp.md) -- Full Write Up  

@@ -1,5 +1,5 @@
 # Path Planning
-> [![Path Planning](WriteUp/PathPlanning.gif)](https://youtu.be/hQwN9OZ39WY "Path Planning")
+> [![Path Planning](WriteUp/PathPlanning.gif)](https://youtu.be/hQwN9OZ39WY "Path Planning")  
 > [Full Video](https://youtu.be/hQwN9OZ39WY) on YouTube
 
 # Objective

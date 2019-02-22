@@ -24,7 +24,7 @@ the 50 MPH speed limit.
 # Video
 
 ### Included Files
-> [WriteUp.md](WriteUp/WriteUp.md) -- Full Write Up
+> [WriteUp.md](WriteUp/WriteUp.md) -- Full Write Up  
 > [Vehicle.cpp](src/Vehicle.cpp) -- Vehicle object, self and other cars on the road  
 > [helper_functions.cpp](src/helper_functions.cpp) -- General functions for processing data, mostly math and waypoint analysis.  
 > [main.cpp](src/main.cpp) -- Connects to the simuator. Process data and send commands back to the car through the simulator.  
